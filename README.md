@@ -1,4 +1,4 @@
-Flipover HA Manaager is a utility to perform:
+# Flipover HA Manaager is a utility to perform:
 
 Cloning of replicas: Using Xtrbackup to stream a backup and start replication
 Master / Slave Promotion: Rechaining all slaves to a new master
@@ -6,13 +6,15 @@ Master replacement: In case no master is available
 
 No SSH access is required and the tools is designed for simplicity.
 
-- Open ports required:
+## Configuration
+
+#### Open ports required:
 
 3306 (or mysql port if different)
 837 (xtrabackup port used)
 836 (flipover agent port)
 
-- Packages required:
+#### Packages required:
 
 yum install openssh-server
 yum install mariadb-server   (becomes install percona repo)
@@ -21,7 +23,7 @@ yum install gcc
 yum install nc
 easy_install twisted
 
-- Required vars /etc/my.cnf
+#### Required vars /etc/my.cnf
 
 [mysqld]
 log-bin # mandatory for replication
@@ -30,9 +32,9 @@ log-slave-updates # mandatory for promote-slave
 report-host=<ip-address of server> # mandatory for promote-slave
 binlog-format=ROW # optional however recommended in general
 
-- Command line usage:
+## Command line usage:
 
-* flipover-cmd
+#### flipover-cmd
 ```
 usage: flipover-cmd [-h] [-N HOST] [-P PORT] [-U USER] [-S PASSWD]
                     [-n SLAVEHOST] [-p SLAVEPORT] [-u SLAVEUSER]
@@ -86,7 +88,7 @@ optional arguments:
                           promote-slave: Promotes the specified slave to master
   ```
   
-flipover-agent
+#### flipover-agent
 
 ```
 usage: flipover-agent [-h] [-c CONF] [-s SERVICE]
