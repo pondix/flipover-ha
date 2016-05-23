@@ -8,6 +8,11 @@ Flipover HA Manager is a utility to perform
 
 No SSH access is required and the tool is designed for simplicity.
 
+Future enhancements include:
+
+- Automatic failover (flipover-agents will be aware of each other ~ quorum election)
+- Reporting URL for integration with monitoring tools
+
 ## Configuration
 
 #### Open ports required:
