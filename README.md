@@ -33,6 +33,7 @@ binlog-format=ROW # optional however recommended in general
 - Command line usage:
 
 * flipover-cmd
+```
 usage: flipover-cmd [-h] [-N HOST] [-P PORT] [-U USER] [-S PASSWD]
                     [-n SLAVEHOST] [-p SLAVEPORT] [-u SLAVEUSER]
                     [-s SLAVEPASSWD] [-r REPL_USER] [-c REPL_PASS]
@@ -83,9 +84,11 @@ optional arguments:
                                          NOTE: The source can be a master, this is not advisable.
                          
                           promote-slave: Promotes the specified slave to master
-                        
-* flipover-agent
+  ```
+  
+flipover-agent
 
+```
 usage: flipover-agent [-h] [-c CONF] [-s SERVICE]
 
 Flipover MySQL HA Agent
@@ -99,4 +102,4 @@ optional arguments:
                         Name of MySQL service e.g. 'mysql' for default
                         'service mysql start'. For MariaDB you may need to set
                         to 'mariadb'
-
+```
