@@ -6,7 +6,7 @@ Flipover HA Manager is a utility to perform
 - Master / Slave Promotion: Rechaining all slaves to a new master
 - Master replacement: In case no master is available
 
-No SSH access is required and the tools is designed for simplicity.
+No SSH access is required and the tool is designed for simplicity.
 
 ## Configuration
 
