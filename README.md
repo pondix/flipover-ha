@@ -1,6 +1,6 @@
 # Flipover HA Manaager 
 
-Flipover HA Manager is a utility to perform
+Flipover HA Manager is a utility to handle high-availability in master-slave clusters, specifically...
 
 - Cloning of replicas: Using Xtrbackup to stream a backup and start replication
 - Master / Slave Promotion: Rechaining all slaves to a new master
