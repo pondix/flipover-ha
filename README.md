@@ -12,27 +12,29 @@ No SSH access is required and the tools is designed for simplicity.
 
 #### Open ports required:
 
-3306 (or mysql port if different)
-837 (xtrabackup port used)
-836 (flipover agent port)
+- 3306 (or mysql port if different)
+- 837 (xtrabackup port used)
+- 836 (flipover agent port)
 
 #### Packages required:
 
-yum install openssh-server
-yum install mariadb-server   (becomes install percona repo)
-yum install MySQL-python
-yum install gcc
-yum install nc
-easy_install twisted
+- yum install openssh-server
+- yum install mariadb-server   (becomes install percona repo)
+- yum install MySQL-python
+- yum install gcc
+- yum install nc
+- easy_install twisted
 
 #### Required vars /etc/my.cnf
 
+```
 [mysqld]
 log-bin # mandatory for replication
 server-id=19216811 # mandatory for replication - must be unique for each host
 log-slave-updates # mandatory for promote-slave
 report-host=<ip-address of server> # mandatory for promote-slave
 binlog-format=ROW # optional however recommended in general
+```
 
 ## Command line usage:
 
