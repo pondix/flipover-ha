@@ -1,8 +1,10 @@
-# Flipover HA Manaager is a utility to perform:
+# Flipover HA Manaager 
 
-Cloning of replicas: Using Xtrbackup to stream a backup and start replication
-Master / Slave Promotion: Rechaining all slaves to a new master
-Master replacement: In case no master is available
+Flipover HA Manager is a utility to perform
+
+- Cloning of replicas: Using Xtrbackup to stream a backup and start replication
+- Master / Slave Promotion: Rechaining all slaves to a new master
+- Master replacement: In case no master is available
 
 No SSH access is required and the tools is designed for simplicity.
 
