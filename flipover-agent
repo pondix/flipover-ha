@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+
+import argparse
+import time
+import subprocess
+from twisted.internet import reactor, protocol
+from core.utils import *
+
+def poll_command(cmd, shell_mode=True):
+    p1 = subprocess.Popen(cmd,shell=shell_mode,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    out, err = p1.communicate()
+    while p1.poll() is None:
+        time.sleep(0.5)
+    return out, err
+
+class CloneListener(protocol.Protocol):
+
+    def dataReceived(self, data):
+        if data == "xbclone":
+            rc = subprocess.check_output("service %s stop" % options.service,shell=True)
+            print "[INFO] MySQL service stopped"
+            rc = subprocess.check_output("rm -fr /var/lib/mysql/*",shell=True)
+            print "[INFO Deleted existing datadir"
+            print "[INFO] Initializing xbclone"
+            p1 = subprocess.Popen("nc -l 836 | tar xvif - -C /var/lib/mysql/", shell=True,
+                                  stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            self.transport.write("NCUP")
+            print "[INFO] Communication complete - nc is listening"
+        elif "MySQL binlog position" in data:
+            print "[INFO] xbclone FINISHED"
+            out, err = poll_command("innobackupex --apply-log /var/lib/mysql")
+            out, err = poll_command("chown -R mysql:mysql /var/lib/mysql")
+            out, err = poll_command("service mariadb start")
+            print "[INFO] MySQL service started"
+            self.transport.write("READY")
+        elif data == "mdclone":
+            # Todo... or not todo
+            self.transport.write("Mysqldump complete")
+        else:
+            self.transport.write("Unknown cloning type requested")
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Flipover MySQL HA Manager")
+    parser.add_argument("-c", "--conf", dest="conf", default="/etc/my.cnf",
+                        help="Location of my.cnf configuration file - defaults " \
+                        "to /etc/my.cnf. For Ubuntu or Debian you may need to set " \
+                        "to /etc/mysql/my.cnf")
+    parser.add_argument("-s", "--service", dest="service", default="mysql",
+                        help="Name of MySQL service e.g. 'mysql' for default " \
+                        "'service mysql start'. For MariaDB you may need to set " \
+                        "to 'mariadb'")
+    options = parser.parse_args()
+    return options
+
+options = parse_args()
+master = {}
+slave = {}
+
+def main():
+    factory = protocol.ServerFactory()
+    factory.protocol = CloneListener
+    reactor.listenTCP(837, factory)
+    reactor.run()
+
+if __name__ == '__main__':
+    main()
+

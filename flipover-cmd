@@ -1,0 +1,149 @@
+#!/usr/bin/env python
+
+import os.path
+import subprocess
+import time
+import sys
+import argparse
+import MySQLdb
+import socket
+from twisted.internet import reactor, protocol
+from core.utils import *
+from core.system import *
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Flipover MySQL HA Manager",
+                                     formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument("-N", "--node", dest="host", default="localhost", 
+                        help="Hostname for master / source ~ defaults to localhost\n ")
+    parser.add_argument("-P", "--port", dest="port", default=3306, 
+                        help="Port for master / source ~ defaults to 3306\n ")
+    parser.add_argument("-U", "--user", dest="user", default="root",
+                        help="Username to connect to master / source ~ defaults to ''\n ")
+    parser.add_argument("-S", "--secret", dest="passwd", default="",
+                        help="Password to connect to master / source ~ defaults to ''\n ")
+    parser.add_argument("-n", "--slavenode", dest="slavehost", default="localhost", 
+                        help="Hostname for slave ~ defaults to localhost\n ")
+    parser.add_argument("-p", "--slaveport", dest="slaveport", default=3306, 
+                        help="Port for slave ~ defaults to 3306\n ")
+    parser.add_argument("-u", "--slaveuser", dest="slaveuser", default="root", 
+                        help="Username to connect to slave ~ defaults to 'root'\n ")
+    parser.add_argument("-s", "--slavesecret", dest="slavepasswd", default="", 
+                        help="Password to connect to slave ~ defaults to ''\n ")
+    parser.add_argument("-r", "--repluser", dest="repl_user", default="repl",
+                        help="Username to connect to slave ~ defaults to 'repl'\n ")
+    parser.add_argument("-c", "--replpass", dest="repl_pass", default="",
+                        help="Password to connect replication stream to master ~ defaults to ''\n ")
+    parser.add_argument("-m", "--mode", dest="mode", default="show-status", 
+                        help="\n" \
+                             "Choose one of the three '-m' options ~ defaults to 'show-status':\n " \
+                             "\n"
+                             "  show-status:   Prints master & slave binlog filename and positions\n" \
+                             "\n"
+                             "  clone-slave:   Clones a slave using Xtrabackup using the local serer as source\n" \
+                             "                 e.g. 'flipover -m clone-slave -N 10.10.10.1 -n 10.10.10.2' will \n"
+                             "                 stream a fresh Xtrabackup from 10.10.10.1 to 10.10.10.2 and \n" \
+                             "                 start replication between the current master and 10.10.10.2.\n" \
+                             "                 >> You must run 'flipover -m ...' from 10.10.10.1 in this scenario.\n" \
+                             "                 NOTE: The source can be a master, this is not advisable.\n " \
+                             "\n"
+                             "  promote-slave: Promotes the specified slave to master\n" \
+                             "\n",
+                        choices=['show-status','clone-slave','promote-slave','replace-master'])
+    options = parser.parse_args()
+    return options
+
+def check_required(mode):
+    if mode == 'clone-slave':
+        if not cmd_exists("nc"):
+            print "[ERROR] The 'nc' package is required"
+            sys.exit(2)
+        if not cmd_exists("innobackupex"):
+            print "[ERROR] The 'Xtrabackup' package is required"
+            sys.exit(2)
+        if options.host == 'localhost':
+            print "[ERROR] You have not set '-N' or are using 'localhost' as a value."
+            print "Please specify the IP address or hostname that should be used for"
+            print "the MASTER server, this is used for the CHANGE MASTER TO ... command."  
+            print
+            sys.exit(2)
+        if options.repl_user == 'repl':
+            print "[WARNING] You are using 'repl' as the replication user - define this with the '-r' switch"
+        if options.repl_pass == '':
+            print "[WARNING] The replication password is BLANK - define this with the '-c' switch"
+    if options.host == options.slavehost and options.port == options.slaveport:
+        print ""
+        print " [ERROR] Master and slave hostname (or at least port) must differ"
+        print " Run 'flipover -h' to view options"
+        print ""
+        sys.exit(1)
+
+options = parse_args()
+
+def main():
+
+    print
+    print "Started 'Flipover MySQL HA Manager' version 1.0" \
+          " - GMT time is %s" % time.strftime("%Y-%m-%d %H:%M:%S",time.gmtime())
+    print
+
+    check_required(options.mode)
+
+    master_cstring = node(options.user, options.passwd, options.host, options.port)
+    slave_cstring = node(options.slaveuser, options.slavepasswd, options.slavehost, options.slaveport)
+
+    if options.mode == "show-status":
+        print "Running 'show-status' mode..."
+        print
+        show_status(master_cstring, slave_cstring)
+
+    if options.mode == "clone-slave":
+        print ""
+        print "Running 'clone-slave' mode..."
+        print
+        print "#####################################################################"
+        print " IMPORTANT MESSAGE:"
+        print "#####################################################################"
+        print ">> This will delete the existing data and reload using Xtrabackup"
+        print "#####################################################################"
+        print "Are you sure you want to continue?"
+        cont_choice = raw_input("(Press 'y' and enter to continue / any key to quit)")
+        if cont_choice == "y":
+            clone_slave(master_cstring, slave_cstring, options.repl_user, options.repl_pass) 
+        elif cont_choice != "y":
+            sys.exit(0)
+
+    if options.mode == "promote-slave":
+        print ""
+        print "Running 'promote-slave' mode..."
+        print
+        print "#####################################################################"
+        print " IMPORTANT MESSAGE:"
+        print "#####################################################################"
+        print ">> This will demote the current master to slave and set %s as master" % (slave_cstring.host)
+        print "#####################################################################"
+        print "Are you sure you want to continue?"
+        cont_choice = raw_input("(Press 'y' and enter to continue / any key to quit)")
+        if cont_choice == "y":
+            promote_slave(master_cstring,slave_cstring,options.repl_pass)
+        elif cont_choice != "y":
+            sys.exit(0) 
+
+    if options.mode == "replace-master":
+        print ""
+        print "Running 'replace-master' mode..."
+        print
+        print "#####################################################################"
+        print " IMPORTANT MESSAGE:"
+        print "#####################################################################"
+        print ">> This will set %s as master and remove %s from cluster" % (slave_cstring.host,master_cstring.host)
+        print "#####################################################################"
+        print "Are you sure you want to continue?"
+        cont_choice = raw_input("(Press 'y' and enter to continue / any key to quit)")
+        if cont_choice == "y":
+            replace_master(slave_cstring,options.repl_pass)
+        elif cont_choice != "y":
+            sys.exit(0)
+
+if __name__ == '__main__':
+    main()
