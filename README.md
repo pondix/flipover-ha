@@ -87,11 +87,10 @@ optional arguments:
                          
                           show-status:   Prints master & slave binlog filename and positions
                         
-                          clone-slave:   Clones a slave using Xtrabackup using the local serer as source
+                          clone-slave:   Clones a slave using Xtrabackup using the local server as source
                                          e.g. 'flipover -m clone-slave -N 10.10.10.1 -n 10.10.10.2' will 
                                          stream a fresh Xtrabackup from 10.10.10.1 to 10.10.10.2 and 
                                          start replication between the current master and 10.10.10.2.
-                                         >> You must run 'flipover -m ...' from 10.10.10.1 in this scenario.
                                          NOTE: The source can be a master, this is not advisable.
                          
                           promote-slave: Promotes the specified slave to master
