@@ -24,7 +24,7 @@ Future enhancements include:
 #### Packages required:
 
 - yum install openssh-server
-- yum install mariadb-server   (becomes install percona repo)
+- yum install mysql-server (percona-server or mariadb-server)
 - yum install MySQL-python
 - yum install gcc
 - yum install nc
@@ -111,6 +111,6 @@ optional arguments:
                         to /etc/mysql/my.cnf
   -s SERVICE, --service SERVICE
                         Name of MySQL service e.g. 'mysql' for default
-                        'service mysql start'. For MariaDB you may need to set
+                        'service mysql start'. For MariaDB you need to set
                         to 'mariadb'
 ```
