@@ -1,4 +1,4 @@
-# Flipover HA Manaager 
+# Flipover HA Manager 
 
 Flipover HA Manager is a utility to handle high-availability in master-slave clusters, specifically...
 
